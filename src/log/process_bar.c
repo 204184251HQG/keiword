@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <linux/termios.h>
 
-#include "klog.h"
+#include "keilog.h"
 
 #define MAX_WIN_W 200
 int32_t get_win_width()

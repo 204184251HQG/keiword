@@ -1,8 +1,7 @@
 
 #include <stdint.h>
 
-#include "klog.h"
-#include "process_bar.h"
+#include "keilog.h"
 
 int main()
 {
@@ -11,8 +10,8 @@ int main()
     int32_t min = 0;
     while (index <= total)
     {
-        min =  min(index, total);
-        KLOG_I("min is = %d  max is = %d\n", min, max(index, total));
+        min =  kmin(index, total);
+        KLOG_I("min is = %d  max is = %d\n", min, kmax(index, total));
         index++;
     }
     printf("\n");

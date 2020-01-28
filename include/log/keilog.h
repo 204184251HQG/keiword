@@ -1,5 +1,5 @@
-#ifndef _KLOG_H_
-#define _KLOG_H_
+#ifndef _KEILOG_H_
+#define _KEILOG_H_
 
 #include <stdio.h>
 #include <unistd.h>
@@ -93,4 +93,4 @@ int32_t get_win_remain_width(int32_t offset);
 
 int32_t print_proc_bar(int32_t persent, char *color);
 
-#endif
+#endif //_KEILOG_H_
