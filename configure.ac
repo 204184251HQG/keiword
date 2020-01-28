@@ -17,8 +17,8 @@ AC_PROG_RANLIB
 AC_CHECK_HEADERS([stdint.h string.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_INT32_T
-AC_TYPE_UINT32_T
+# AC_TYPE_INT32_T
+# AC_TYPE_UINT32_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
