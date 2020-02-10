@@ -7,27 +7,36 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([config.h])
 
+KWTOPDIR=$(cd ${srcdir}; /bin/pwd;)
+AC_SUBST([KWTOPDIR])
+AC_MSG_NOTICE(KWTOPDIR $KWTOPDIR)
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_AR
 AC_PROG_RANLIB
 
+
+## check keilib
 AC_ARG_ENABLE(keilib, [AS_HELP_STRING([--enable-keilib=@<:@yes/no@:>@],
                             [whether to use keilib [default=yes]])], [], [enable_keilib=yes])
 
 AM_CONDITIONAL([KEILIB_OPT], [test "$enable_keilib" = yes])
 KEILIB_DIR=
+KEILIB_CPPFLAGS=
 AM_COND_IF([KEILIB_OPT],[
-    if test -d "$srcdir/keilib"; then
+    if test -d "${KWTOPDIR}/keilib"; then
         AC_MSG_NOTICE(configuring keilib)
         AC_CONFIG_SUBDIRS([keilib])
         KEILIB_DIR=keilib
+        KEILIB_CPPFLAGS=-I${KWTOPDIR}/keilib/include/
     fi
     ],
     [])
 AC_SUBST([KEILIB_DIR])
+AC_SUBST([KEILIB_CPPFLAGS])
 # Checks for libraries.
+## check bullet
 AC_MSG_CHECKING(for BulletDynamics BulletCollision LinearMath support)
 AC_LANG_SAVE
 AC_LANG(C++)

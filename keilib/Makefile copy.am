@@ -1,9 +1,0 @@
-AUTOMAKE_OPTIONS=foreign
-SUBDIRS = src
-SUBDIRS += test
-KWTOPDIR=$(shell cd $(top_srcdir); /bin/pwd;)
-export KWTOPDIR
-AM_CPPFLAGS = -I$(KWTOPDIR)/include/
-AM_CPPFLAGS += -I$(KWTOPDIR)/keilib/include/
-export AM_CPPFLAGS
-dist_doc_DATA = README.md

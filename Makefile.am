@@ -1,11 +1,9 @@
 AUTOMAKE_OPTIONS=foreign
-KWTOPDIR=$(shell cd $(top_srcdir); /bin/pwd;)
 
 SUBDIRS = $(KEILIB_DIR) src
 
 export KWTOPDIR
-AM_CPPFLAGS = -I$(KWTOPDIR)/include/
-AM_CPPFLAGS += -I$(KWTOPDIR)/keilib/include/
+AM_CPPFLAGS = $(KEILIB_CPPFLAGS) -I$(KWTOPDIR)/include/
 
 export AM_CPPFLAGS
 

@@ -649,6 +649,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+KLIBTOPDIR
 AM_BACKSLASH
 AM_DEFAULT_VERBOSITY
 AM_DEFAULT_V
@@ -2767,6 +2768,10 @@ fi
 ac_config_headers="$ac_config_headers config.h"
 
 
+KLIBTOPDIR=$(cd ${srcdir}; /bin/pwd;)
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: KLIBTOPDIR $KLIBTOPDIR" >&5
+$as_echo "$as_me: KLIBTOPDIR $KLIBTOPDIR" >&6;}
 # Checks for programs.
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'

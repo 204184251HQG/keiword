@@ -7,6 +7,9 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/log/process_bar.c])
 AC_CONFIG_HEADERS([config.h])
 
+KLIBTOPDIR=$(cd ${srcdir}; /bin/pwd;)
+AC_SUBST([KLIBTOPDIR])
+AC_MSG_NOTICE(KLIBTOPDIR $KLIBTOPDIR)
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_AR
