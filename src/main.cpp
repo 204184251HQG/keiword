@@ -16,6 +16,10 @@ subject to the following restrictions:
 ///-----includes_start-----
 #include <btBulletDynamicsCommon.h>
 #include <stdio.h>
+#include "config.h"
+#ifdef HAVE_KEILIB
+#include "log/keilog.h"
+#endif
 
 /// This is a Hello World program for running a basic Bullet physics simulation
 
@@ -130,7 +134,14 @@ int main(int argc, char** argv)
 			{
 				trans = obj->getWorldTransform();
 			}
-			printf("world pos object %d = %f,%f,%f\n", j, float(trans.getOrigin().getX()), float(trans.getOrigin().getY()), float(trans.getOrigin().getZ()));
+			#ifdef HAVE_KEILIB
+			KLOG_I("world pos object %d = %f,%f,%f\n", j, float(trans.getOrigin().getX()), float(trans.getOrigin().getY()), float(trans.getOrigin().getZ()));
+			if(j==1)
+			{
+				print_proc_bar(int32_t(trans.getOrigin().getY()*10)+55, GREEN);
+				usleep(10000);
+			}
+			#endif 
 		}
 	}
 

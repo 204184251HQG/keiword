@@ -30,6 +30,7 @@ AM_COND_IF([KEILIB_OPT],[
         AC_CONFIG_SUBDIRS([keilib])
         KEILIB_DIR=keilib
         KEILIB_CPPFLAGS=-I${KWTOPDIR}/keilib/include/
+        AC_DEFINE(HAVE_KEILIB, 1, [Define if you use the 'keilib'.])
     fi
     ],
     [])

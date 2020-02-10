@@ -26,13 +26,14 @@ int32_t get_win_remain_width(int32_t offset)
     return remain_w;
 }
 
-int32_t print_proc_bar(int32_t persent, char *color)
+int32_t print_proc_bar(int32_t persent, const char *color)
 {
     static char tmp[5] = {'-', '\\', '|', '/', '\0'};
     static uint32_t count = 0;
     static char str[MAX_WIN_W] = {0};
-    // str[index * get_win_width() / total] = '#';
-    int32_t print_pos = (persent * get_win_remain_width(16)) / 100;
+    uint32_t remain_len = get_win_remain_width(16);
+    uint32_t print_pos = (persent * remain_len) / 100;
+    print_pos = print_pos > remain_len ? (remain_len) : print_pos;
     memset(str, '#', print_pos);
     str[print_pos] = '\0';
 

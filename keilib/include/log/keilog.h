@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include <linux/termios.h>
 
+#ifdef __cplusplus
+    extern "C"{
+#endif
+
 //"\033[0m"                 //关闭所有属性
 //"\033[1m"                 //设置高亮度
 //"\033[4m"                 //下划线
@@ -86,11 +90,21 @@
         _x > _y ? _x : _y;        \
     })
 
-
 int32_t get_win_width();
 
 int32_t get_win_remain_width(int32_t offset);
 
-int32_t print_proc_bar(int32_t persent, char *color);
+/**
+ * @brief print process bar in stdout
+ * 
+ * @param persent [0-100]
+ * @param color GREEN for example
+ * @return int32_t 
+ */
+int32_t print_proc_bar(int32_t persent, const char *color);
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif //_KEILOG_H_
