@@ -29,6 +29,9 @@ autom4te.cache
 /missing
 /stamp-h1
 
+
+keilib/aclocal.m4
+
 # https://www.gnu.org/software/libtool/
 
 /ltmain.sh
