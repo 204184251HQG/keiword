@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS=foreign
 SUBDIRS = src
+SUBDIRS += test
 
 # export KLIBTOPDIR
 AM_CPPFLAGS = -I$(KLIBTOPDIR)/include/

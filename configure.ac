@@ -53,7 +53,7 @@ AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([#include <btBulletDynamicsCommon.h>],
         [void *a = new btDefaultCollisionConfiguration();])],
     [TEST_LIBS="$TEST_LIBS $BULLET_LIBS"] [HAVE_BULLET=1], 
-    [AC_MSG_ERROR([libbullet is not installed.]);
+    [AC_MSG_WARN([libbullet is not installed.]);
     LDFLAGS=$SAVED_LDFLAGS;
     LIBS=$SAVED_LIBS;
     CXXFLAGS=$SAVED_CXXFLAGS])

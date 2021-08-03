@@ -5,6 +5,7 @@ AC_PREREQ([2.69])
 AC_INIT([klib], [0.1], [204184251@qq.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/log/process_bar.c])
+AC_CONFIG_SRCDIR([test/common_test.c])
 AC_CONFIG_HEADERS([config.h])
 
 KLIBTOPDIR=$(cd ${srcdir}; /bin/pwd;)

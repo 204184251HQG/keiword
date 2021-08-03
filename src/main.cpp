@@ -14,30 +14,18 @@ subject to the following restrictions:
 */
 
 ///-----includes_start-----
-#include <btBulletDynamicsCommon.h>
 #include <stdio.h>
 #include "config.h"
-#ifdef HAVE_KEILIB
+#ifndef HAVE_KEILIB
+#error
+#endif
 #include "log/keilog.h"
-#endif
 
-/// This is a Hello World program for running a basic Bullet physics simulation
+#ifdef HAVE_BULLET
+#include <btBulletDynamicsCommon.h>
 
-int main(int argc, char** argv)
-{
-	///-----includes_end-----
+bullet_test(){
 
-	int i = 0;
-
-			#ifdef HAVE_KEILIB
- int ret = keilog_init(KLOG_DEFAULT, "/home/keino/repo/keiworld/build", "newlogtest", 0);
-
-	while(i < 100)
-	{
- 		keilog(KLOG_INFO, "i = %d", i++);
-	}
-	return 0;
-#endif
 	///-----initialization_start-----
 
 	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
@@ -198,4 +186,17 @@ int main(int argc, char** argv)
 
 	//next line is optional: it will be cleared by the destructor when the array goes out of scope
 	collisionShapes.clear();
+}
+#endif
+/// This is a Hello World program for running a basic Bullet physics simulation
+
+int main(int argc, char** argv)
+{
+	///-----includes_end-----
+
+	int i = 0;
+
+	int ret = keilog_init(KLOG_DEFAULT, "/home/keino/repo/keiworld/build", "newlogtest", 0);
+	keilog(KLOG_INFO, "keilog init done\n");
+
 }
