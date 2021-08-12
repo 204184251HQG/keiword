@@ -14,4 +14,4 @@ extern "C"{
 }
 #endif
 
-#endif
+#endif //_KEIUTIL_H_

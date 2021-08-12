@@ -2,7 +2,7 @@
 
 
 
-static int section_lock16(uint16_t *lock) {
+int section_lock16(uint16_t *lock) {
     int waitc = 0;
     do {
         if (*lock == 0) {
@@ -27,7 +27,7 @@ static int section_lock16(uint16_t *lock) {
     } while (1);
 }
 
-static int section_unlock16(uint16_t *lock) {
+int section_unlock16(uint16_t *lock) {
     if (InterlockedCompareExchange16((SHORT volatile*)lock, 0, 1) == 0) {
         log_info("unlock16 error, no in lock");
         return -1;
