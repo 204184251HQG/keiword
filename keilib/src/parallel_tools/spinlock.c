@@ -1,20 +1,24 @@
 #include "util.h"
 
-
-
+#ifdef DBG_SPINLOCK
+#include "keilog.h"
+#define spin_log(fmt, arg...) KLOG_D(fmt, ##arg)
+#else
+#define spin_log(fmt, arg...)
+#endif
 int section_lock16(uint16_t *lock) {
     int waitc = 0;
     do {
         if (*lock == 0) {
-            if (InterlockedCompareExchange16((SHORT volatile*)lock, 1, 0) == 0) {
+            if (atomic_cmpxchg((uint16_t volatile*)lock, 1, 0) == 0) {
                 log_debug("lock16ed");
                 return 0;
             }
         }
-        log_info("lock16 waitting %d", waitc);
+        spin_log("lock16 waitting %d", waitc);
         
         do {
-            __asm {pause};
+            LOOP_HINT
             if (*lock == 0) {
                 break;
             }
@@ -28,10 +32,10 @@ int section_lock16(uint16_t *lock) {
 }
 
 int section_unlock16(uint16_t *lock) {
-    if (InterlockedCompareExchange16((SHORT volatile*)lock, 0, 1) == 0) {
-        log_info("unlock16 error, no in lock");
+    if (atomic_cmpxchg((uint16_t volatile*)lock, 0, 1) == 0) {
+        spin_log("unlock16 error, no in lock");
         return -1;
     }
-    log_debug("unlock16ed");
+    spin_log("unlock16ed");
     return 0;
 }
