@@ -1,12 +1,12 @@
 #include "util.h"
 
 #ifdef DBG_SPINLOCK
-#include "keilog.h"
+#include "log/keilog.h"
 #define spin_log(fmt, arg...) KLOG_D(fmt, ##arg)
 #else
 #define spin_log(fmt, arg...)
 #endif
-int section_lock16(uint16_t *lock) {
+int spin_lock16(uint16_t *lock) {
     int waitc = 0;
     do {
         if (*lock == 0) {
@@ -31,7 +31,7 @@ int section_lock16(uint16_t *lock) {
     } while (1);
 }
 
-int section_unlock16(uint16_t *lock) {
+int spin_unlock16(uint16_t *lock) {
     if (atomic_cmpxchg((uint16_t volatile*)lock, 0, 1) == 0) {
         spin_log("unlock16 error, no in lock");
         return -1;
