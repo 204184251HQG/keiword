@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <pthread.h>
-#include "util.h"
+#include "util/util.h"
+#include "util/keithread.h"
 #include "log/keilog.h"
 #include "parallel_tools/spinlock.h"
 #include "parallel_tools/counter.h"
@@ -10,7 +11,7 @@
 #else
 #define counter_logd(fmt, arg...)
 #endif
-
+#define MAX_COUNTERMAX 100
 typedef struct counter_thread_data_t_
 {
     counter_uint counter;
@@ -161,7 +162,17 @@ static inline void globalize_count(counter_t *counter, counter_thread_data_t *t)
     t->countermax = 0;
 }
 static inline void blance_count(counter_t *counter, counter_thread_data_t *t){
-    
+    t->countermax = counter->globalcountmax - counter->globalcount - counter->globalreserve;
+    t->countermax /= num_online_threads();
+    if(t->countermax > MAX_COUNTERMAX){
+        t->countermax = MAX_COUNTERMAX;
+    }
+    counter->globalreserve += t->countermax;
+    t->counter = t->countermax / 2;
+    if(t->counter > counter->globalcount){
+        t->counter = counter->globalcount;
+    }
+    counter->globalcount -= t->counter;
 }
 
 int add_count(counter_t *counter, counter_uint delta)
@@ -180,6 +191,7 @@ int add_count(counter_t *counter, counter_uint delta)
         return 0;
     }
     counter->globalcount +=  delta;
-
+    blance_count(counter, t);
     spin_unlock16(&counter->cnt_mutex);
+    return 1;
 }

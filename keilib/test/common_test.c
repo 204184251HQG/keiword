@@ -1,6 +1,6 @@
 
 #include <stdint.h>
-
+#include "util/keithread.h"
 #include "log/keilog.h"
 
 int main()
@@ -14,6 +14,8 @@ int main()
         KLOG_I("min is = %d  max is = %d\n", min, kmax(index, total));
         index++;
     }
+    int tnum = num_online_threads();
+    printf("t %d", tnum);
     printf("\n");
     return 0;
 }
