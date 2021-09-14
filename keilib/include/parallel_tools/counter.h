@@ -16,6 +16,9 @@ typedef struct counter_t_{
     uint32_t index; //to find thread local value value
 } counter_t;
 
+
+int add_count(counter_t *counter, counter_uint delta);
+int sub_count(counter_t *counter, counter_uint delta);
 #ifdef __cplusplus
 }
 #endif

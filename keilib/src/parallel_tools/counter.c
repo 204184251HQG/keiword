@@ -195,3 +195,26 @@ int add_count(counter_t *counter, counter_uint delta)
     spin_unlock16(&counter->cnt_mutex);
     return 1;
 }
+
+int sub_count(counter_t *counter, counter_uint delta){
+    counter_thread_data_t *t = get_counter_thread_data(counter);
+
+    if(t->counter >= delta){
+        WRITE_ONCE(t->counter, t->counter - delta);
+        return 1;
+    }
+    spin_lock16(&counter->cnt_mutex);
+    globalize_count(counter, t);
+    if (counter->globalcount < delta){
+        spin_unlock16(&counter->cnt_mutex);
+        return 0;
+    }
+    counter->globalcount -= delta;
+    blance_count(counter, t);
+    spin_unlock16(&counter->cnt_mutex);
+    return 1;
+}
+
+counter_uint read_count(counter_t *counter){
+    
+}
