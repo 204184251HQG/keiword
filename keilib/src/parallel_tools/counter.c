@@ -18,8 +18,10 @@ typedef struct counter_thread_data_t_
     counter_uint countermax;
 } counter_thread_data_t;
 
+#define ID_MASK 0x80000000
 typedef struct counter_thread_datapacked_t_
 {
+    uint32_t id; // need to add with ID_MASK
     uint32_t len;
     counter_thread_data_t **data_array;
 } counter_thread_datapacked_t;
@@ -28,6 +30,9 @@ typedef struct counter_slot_t_
 {
     uint32_t in_use;
 } counter_slot_t;
+
+static int thread_map[COUNTER_MAX_THREADS] = {0};
+static uint16_t thread_map_mutex = 0;
 static counter_slot_t *slot_table = 0;
 static uint32_t counter_slot_number = 0;
 
@@ -35,8 +40,37 @@ static uint16_t gblcnt_mutex = 0;
 
 static pthread_key_t counter_key = 0;
 
+
+static int register_to_thread_map(counter_thread_datapacked_t *ctable){
+    int i = 0;
+    pthread_t tid = pthread_self();
+    
+    spin_lock16(&thread_map_mutex);
+    for (i = 0; i < COUNTER_MAX_THREADS; i++) {
+        if(thread_map[i]){
+            continue;
+        }
+        thread_map[i] = tid;
+        break;
+    }
+    spin_unlock16(&thread_map_mutex);
+
+    if(i == COUNTER_MAX_THREADS){
+        return -1;
+    }
+
+    ctable->id = i + ID_MASK;
+    return 0;
+}
+
+static int unregister_to_thread_map(){
+
+}
+
 static void counter_destr(void *arr)
 {
+    counter_thread_datapacked_t *ctable = (counter_thread_datapacked_t *)arr;
+
 }
 
 static void counter_init(void)
@@ -72,6 +106,7 @@ int new_counter(counter_t *counter, counter_uint max)
     spin_lock16(&gblcnt_mutex);
     int i = 0;
 
+    memset(counter, 0, sizeof(counter_t));
 retry:
     for (i; i < counter_slot_number; i++)
     {
@@ -110,6 +145,9 @@ int delete_counter(counter_t *counter){
     }
 }
 
+
+
+
 static counter_thread_data_t *get_counter_thread_data(counter_t *counter)
 {
     counter_thread_datapacked_t *ctable = pthread_getspecific(counter_key);
@@ -123,6 +161,9 @@ static counter_thread_data_t *get_counter_thread_data(counter_t *counter)
         }
         ctable->len = counter_slot_number;
         pthread_setspecific(counter_key, ctable);
+        if(register_to_thread_map(ctable)){
+            goto failed;
+        }
     }
     int i = counter->index;
     if (i >= ctable->len)
@@ -139,16 +180,21 @@ static counter_thread_data_t *get_counter_thread_data(counter_t *counter)
         ctable->len = counter_slot_number;
         pthread_setspecific(counter_key, ctable);
     }
-    if (ctable->data_array[i])
-    {
-        ctable->data_array[i] = (counter_thread_data_t *)calloc(1, sizeof(counter_thread_data_t));
-    }
     if (!ctable->data_array[i])
     {
-        goto failed;
+        ctable->data_array[i] = (counter_thread_data_t *)calloc(1, sizeof(counter_thread_data_t));
+        if (!ctable->data_array[i])
+        {
+            goto failed;
+        }
     }
 
     ctable = pthread_getspecific(counter_key);
+
+    if(counter->counter_threadp[ctable->id-ID_MASK] == 0){
+        counter->counter_threadp[ctable->id-ID_MASK] = ctable->data_array[i];
+    }
+
     return (ctable->data_array[i]);
 
 failed:
