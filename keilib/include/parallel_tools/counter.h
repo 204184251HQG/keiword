@@ -9,11 +9,12 @@ extern "C"{
 typedef uint32_t counter_uint;
 #define COUNTER_MAX_THREADS 512
 struct counter_thread_data_t_;
+
+#define counter_lock uint16_t
 typedef struct counter_t_{
     counter_uint globalcountmax;
     counter_uint globalcount;
     counter_uint globalreserve;
-    uint16_t cnt_mutex;
     uint32_t index; //index number of the counter in all counter
     struct counter_thread_data_t_ *counter_threadp[COUNTER_MAX_THREADS];
 } counter_t;
