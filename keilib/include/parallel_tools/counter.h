@@ -20,8 +20,10 @@ typedef struct counter_t_{
 } counter_t;
 
 int new_counter(counter_t *counter, counter_uint max);
+int delete_counter(counter_t *counter);
 int add_count(counter_t *counter, counter_uint delta);
 int sub_count(counter_t *counter, counter_uint delta);
+counter_uint read_count(counter_t *counter);
 #ifdef __cplusplus
 }
 #endif

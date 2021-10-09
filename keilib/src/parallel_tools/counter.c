@@ -110,7 +110,7 @@ int delete_counter(counter_t *counter)
         counter_thread_data_reset(counter->counter_threadp[i]);
     }
     spin_unlock16(tlockp);
-    
+    return 0;
 }
 
 static counter_thread_data_t *get_counter_thread_data(counter_t *counter)
