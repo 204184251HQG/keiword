@@ -13,6 +13,15 @@ typedef pthread_t thread_id_t;
 
 int num_online_threads(void);
 
+static thread_id_t create_thread(void *(*func)(void *), void *arg)
+{
+    thread_id_t tid;
+    if (pthread_create(&tid, NULL, func, arg) != 0) {
+		perror("create_thread:pthread_create");
+		exit(EXIT_FAILURE);
+	}
+    return tid;
+}
 
 
 #endif // _KEITHREAD_H_

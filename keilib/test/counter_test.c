@@ -6,10 +6,19 @@
 #include "util/atomic.h"
 
 atomic_t nthreadsrunning;
+
+
+#define GOFLAG_INIT	0
+#define GOFLAG_HOG	1
+#define GOFLAG_RUN_UP	2
+#define GOFLAG_RUN_DOWN	3
+#define GOFLAG_RUN	4
+#define GOFLAG_STOP	5
+
 int goflag __attribute__((__aligned__(CACHE_LINE_SIZE))) = 0;
-/*
- * Performance test.
- */
+
+#define COUNT_READ_RUN   1000
+#define COUNT_UPDATE_RUN 1000 
 
 void *count_read_perf_test(void *arg)
 {
@@ -37,16 +46,6 @@ void *count_read_perf_test(void *arg)
 	return NULL;
 }
 
-
-static thread_id_t create_thread(void *(*func)(void *), void *arg)
-{
-    thread_id_t tid;
-    if (pthread_create(&tid, NULL, func, arg) != 0) {
-		perror("create_thread:pthread_create");
-		exit(EXIT_FAILURE);
-	}
-    return tid;
-}
 
 void perftest(int nreaders, int cpustride)
 {
