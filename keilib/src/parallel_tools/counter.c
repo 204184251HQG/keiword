@@ -1,10 +1,10 @@
+#include "util/apipthread.h"
+#include "parallel_tools/counter.h"
+#include "parallel_tools/spinlock.h"
+#include "log/keilog.h"
+#include "util/util.h"
 #include <stdlib.h>
 #include <pthread.h>
-#include "util/util.h"
-#include "util/keithread.h"
-#include "log/keilog.h"
-#include "parallel_tools/spinlock.h"
-#include "parallel_tools/counter.h"
 
 #ifdef DBG_COUNTER
 #define counter_logd(fmt, arg...) KLOG_D(fmt, ##arg)
