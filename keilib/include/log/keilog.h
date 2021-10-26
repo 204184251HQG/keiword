@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <linux/termios.h>
 
+extern pid_t gettid();
+
 #ifdef __cplusplus
     extern "C"{
 #endif
@@ -69,13 +71,13 @@ typedef enum KLogPriority
 #define KLOG_I(str, ...)                          \
     do                                            \
     {                                             \
-        printf(GREEN "Info" NONE ": ");           \
+        printf("%6d " GREEN "Info" NONE ": ", gettid());           \
         printf(CLR_LINE str"\n" NONE, ##__VA_ARGS__); \
     } while (0)
 #define KLOG_E(str, arg...)                                                         \
     do                                                                              \
     {                                                                               \
-        printf(RED "Error" NONE " in %s(%d)-<%s>: ", __FILE__, __LINE__, __func__); \
+        printf("%6d " RED "Error" NONE " in %s(%d)-<%s>: ", gettid(), __FILE__, __LINE__, __func__); \
         printf(CLR_LINE str"\n" NONE, ##arg);                                           \
     } while (0)
 #define KLOG_D(str, arg...)                                                                \
@@ -83,7 +85,7 @@ typedef enum KLogPriority
     {                                                                                      \
         if (PRINT_DBG == 1)                                                                \
         {                                                                                  \
-            printf(PURPLE "Error" NONE " in %s(%d)-<%s>: ", __FILE__, __LINE__, __func__); \
+            printf("%6d " PURPLE "Error" NONE " in %s(%d)-<%s>: ", gettid(), __FILE__, __LINE__, __func__); \
             printf(CLR_LINE str"\n" NONE, ##arg);                                              \
         }                                                                                  \
     } while (0)

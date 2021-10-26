@@ -23,7 +23,7 @@ typedef struct counter_thread_datapacked_t_
 {
     uint32_t id; // need to add with ID_MASK
     uint32_t len;
-    counter_thread_data_t **data_array;
+    counter_thread_data_t *data_array[0];
 } counter_thread_datapacked_t;
 
 typedef struct counter_slot_t_

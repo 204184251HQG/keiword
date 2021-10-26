@@ -15,7 +15,6 @@ int main()
         index++;
     }
     int tnum = num_online_threads();
-    printf("t %d", tnum);
-    printf("\n");
+    KLOG_I("t %d", tnum);
     return 0;
 }

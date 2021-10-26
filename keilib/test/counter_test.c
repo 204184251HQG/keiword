@@ -97,7 +97,7 @@ void perftestrun(int nthreads, int nreaders, int nupdaters)
 {
     int exitcode = EXIT_SUCCESS;
     int t;
-    int duration = 240;
+    int duration = 300;
 
     smp_mb();
     while (atomic_read(&nthreadsrunning) < nthreads)
@@ -110,13 +110,13 @@ void perftestrun(int nthreads, int nreaders, int nupdaters)
     smp_mb();
     wait_threads(tids, nthreads);
     if (read_count(&counter) != 0) {
-        printf("!!! Count mismatch: 0 counted vs. %lu final value\n",
+        KLOG_E("!!! Count mismatch: 0 counted vs. %lu final value\n",
                (long unsigned int)read_count(&counter));
         exitcode = EXIT_FAILURE;
     }
-    printf("n_reads: %lld  n_updates: %lld  nreaders: %d  nupdaters: %d duration: %d\n",
+    KLOG_I("n_reads: %lld  n_updates: %lld  nreaders: %d  nupdaters: %d duration: %d",
            n_reads, n_updates, nreaders, nupdaters, duration);
-    printf("ns/read: %g  ns/update: %g\n",
+    KLOG_I("ns/read: %g  ns/update: %g",
            ((duration * 1000*1000.*(double)nreaders) /
             (double)n_reads),
            ((duration * 1000*1000.*(double)nupdaters) /
@@ -162,10 +162,10 @@ void usage(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     int nreaders = 6;
-    int cpustride = 6;
+    int cpustride = 1;
 
     new_counter(&counter, 0x1000000);
-    
+    KLOG_I("current enable cpu num %d", num_enable_cpus());
     if (argc > 1) {
         nreaders = strtoul(argv[1], NULL, 0);
         if (argc == 2)
