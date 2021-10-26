@@ -34,3 +34,18 @@ thread_id_t create_thread(void *(*func)(void *), void *arg)
     }
     return tid;
 }
+
+void *wait_thread(thread_id_t tid){
+    void *vp;
+    if(pthread_join(tid, &vp) != 0){
+        perror("wait_thread:pthread_join");
+		exit(EXIT_FAILURE);
+    }
+    return vp;
+}
+
+void wait_threads(thread_id_t* tidp, int num){
+    for(int i = 0;i<num;i++){
+        wait_thread(tidp[i]);
+    }
+}

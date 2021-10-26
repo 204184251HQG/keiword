@@ -276,12 +276,13 @@ static void counter_destr(void *arr)
 
 static void counter_init(void)
 {
-    if (counter_key)
+    static int counter_init_flag = 0;
+    if (counter_init_flag)
     {
         return;
     }
     spin_lock16(&gblcnt_mutex);
-    if (counter_key)
+    if (counter_init_flag)
     {
         goto done;
     }
@@ -301,6 +302,7 @@ static void counter_init(void)
         slot_table = (counter_slot_t *)calloc(counter_slot_number, sizeof(counter_slot_t));
     }
 done:
+    counter_init_flag = 1;
     spin_unlock16(&gblcnt_mutex);
 }
 

@@ -1,9 +1,13 @@
 
 #include "util/apipthread.h"
 #include "util/atomic.h"
+#include "log/keilog.h"
 #include "parallel_tools/counter.h"
+#include "parallel_tools/spinlock.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 atomic_t nthreadsrunning;
 int nthreadsexpected;
@@ -21,11 +25,16 @@ int goflag __attribute__((__aligned__(CACHE_LINE_SIZE))) = 0;
 #define COUNT_READ_RUN   1000
 #define COUNT_UPDATE_RUN 1000 
 
+uint16_t result_lock = LOCK16_UNLOCK;
 DEFINE_PER_THREAD(long long, n_reads_pt);
 DEFINE_PER_THREAD(long long, n_updates_pt);
+long long n_reads = 0LL;
+long long n_updates = 0LL;
 unsigned long garbage = 0; /* disable compiler optimizations. */
 
 counter_t counter;
+
+thread_id_t *tids = NULL;
 
 void *count_read_perf_test(void *arg)
 {
@@ -34,11 +43,12 @@ void *count_read_perf_test(void *arg)
     int cpu = (long)arg;
     long long n_reads_local = 0LL;
 
+    KLOG_I("new thread cpu %d", cpu);
     run_on(cpu);
     //count_register_thread();
     atomic_inc(&nthreadsrunning);
     while (READ_ONCE(goflag) == GOFLAG_INIT)
-        sleep(1);
+        usleep(1000);
     while (READ_ONCE(goflag) == GOFLAG_RUN) {
         for (i = COUNT_READ_RUN; i > 0; i--) {
             j += read_count(&counter);
@@ -49,6 +59,11 @@ void *count_read_perf_test(void *arg)
     __get_thread_var(n_reads_pt) += n_reads_local;
     //count_unregister_thread(nthreadsexpected);
     garbage += j;
+
+    spin_lock16(&result_lock);
+    n_reads += n_reads_pt;
+    spin_unlock16(&result_lock);
+
 
     return NULL;
 }
@@ -61,7 +76,7 @@ void *count_update_perf_test(void *arg)
     //count_register_thread();
     atomic_inc(&nthreadsrunning);
     while (READ_ONCE(goflag) == GOFLAG_INIT)
-        sleep(1);
+        usleep(1000);
     while (READ_ONCE(goflag) == GOFLAG_RUN) {
         for (i = COUNT_UPDATE_RUN; i > 0; i--) {
             add_count(&counter, 1);
@@ -72,6 +87,9 @@ void *count_update_perf_test(void *arg)
     }
     __get_thread_var(n_updates_pt) += n_updates_local;
     //count_unregister_thread(nthreadsexpected);
+    spin_lock16(&result_lock);
+    n_updates += n_updates_pt * 2;/* Each update includes an add and a subtract. */
+    spin_unlock16(&result_lock);
     return NULL;
 }
 
@@ -83,22 +101,17 @@ void perftestrun(int nthreads, int nreaders, int nupdaters)
 
     smp_mb();
     while (atomic_read(&nthreadsrunning) < nthreads)
-        poll(NULL, 0, 1);
+        usleep(1000);
     goflag = GOFLAG_RUN;
     smp_mb();
-    poll(NULL, 0, duration);
+    usleep(duration*1000);
     smp_mb();
     goflag = GOFLAG_STOP;
     smp_mb();
-    wait_all_threads();
-    for_each_thread(t) {
-        n_reads += per_thread(n_reads_pt, t);
-        n_updates += per_thread(n_updates_pt, t);
-    }
-    n_updates *= 2;  /* Each update includes an add and a subtract. */
-    if (read_count() != 0) {
+    wait_threads(tids, nthreads);
+    if (read_count(&counter) != 0) {
         printf("!!! Count mismatch: 0 counted vs. %lu final value\n",
-               read_count());
+               (long unsigned int)read_count(&counter));
         exitcode = EXIT_FAILURE;
     }
     printf("n_reads: %lld  n_updates: %lld  nreaders: %d  nupdaters: %d duration: %d\n",
@@ -116,14 +129,16 @@ void perftest(int nreaders, int cpustride)
     int i;
     long arg;
 
-    atomic_set(nthreadsrunning, 0);
+    atomic_set(&nthreadsrunning, 0);
     nthreadsexpected = nreaders + 1;
+
+    tids = calloc(nthreadsexpected, sizeof(thread_id_t));
     for (i = 0; i < nreaders; i++) {
         arg = (long)(i * cpustride);
-        create_thread(count_read_perf_test, (void *)arg);
+        tids[i] = create_thread(count_read_perf_test, (void *)arg);
     }
     arg = (long)(i * cpustride);
-    create_thread(count_update_perf_test, (void *)arg);
+    tids[i] = create_thread(count_update_perf_test, (void *)arg);
     perftestrun(i + 1, nreaders, 1);
 }
 
@@ -149,8 +164,6 @@ int main(int argc, char *argv[])
     int nreaders = 6;
     int cpustride = 6;
 
-    usage(argc, argv);
-    counter_init();
     new_counter(&counter, 0x1000000);
     
     if (argc > 1) {
@@ -170,6 +183,7 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[2], "hog") == 0){
             //hogtest(nreaders, cpustride);
         }
+        usage(argc, argv);
         
     }
     perftest(nreaders, cpustride);

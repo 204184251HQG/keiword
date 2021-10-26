@@ -28,12 +28,6 @@ typedef pthread_t thread_id_t;
                 ({ typeof(x) ___x = ACCESS_ONCE(x); ___x; })
 #define WRITE_ONCE(dst, src) (ACCESS_ONCE(dst) = (typeof(dst))(src))
 
-#if defined(__x86_64__) || defined(__x86__)
-#define LOOP_HINT asm __volatile__ ("pause" ::);
-#else
-#define LOOP_HINT 
-#endif
-
 
 
 
@@ -68,7 +62,8 @@ extern "C"{
 
 int num_online_threads(void);
 thread_id_t create_thread(void *(*func)(void *), void *arg);
-
+void *wait_thread(thread_id_t tid);
+void wait_threads(thread_id_t* tidp, int num);
 #ifdef __cplusplus
 }
 #endif

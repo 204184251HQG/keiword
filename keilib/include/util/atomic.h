@@ -200,11 +200,11 @@ static __inline__ int atomic_sub_return(int i, atomic_t *v)
 
 
 #if defined(CONFIG_STATIC_ASSERT)
-#define QEMU_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
+#define KEI_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
 #else
-#define QEMU_BUILD_BUG_MSG(x, msg)
+#define KEI_BUILD_BUG_MSG(x, msg)
 #endif
-#define QEMU_BUILD_BUG_ON(x) QEMU_BUILD_BUG_MSG(x, "not expecting: " #x)
+#define KEI_BUILD_BUG_ON(x) KEI_BUILD_BUG_MSG(x, "not expecting: " #x)
 /* Sanity check that the size of an atomic operation isn't "overly large".
  * Despite the fact that e.g. i686 has 64-bit atomic operations, we do not
  * want to use them because we ought not need them, and this lets us do a
