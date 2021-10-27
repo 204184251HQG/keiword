@@ -32,9 +32,19 @@ long long n_reads = 0LL;
 long long n_updates = 0LL;
 unsigned long garbage = 0; /* disable compiler optimizations. */
 
-counter_t counter;
 
 thread_id_t *tids = NULL;
+// #define USE_ATOMIC_AS_COUNTER
+#ifdef USE_ATOMIC_AS_COUNTER
+atomic_t counter = {0};
+#define new_counter(cp, max) (0)
+#define delete_counter(cp) (0)
+#define add_count(cp, delta) atomic_add(delta, cp)
+#define sub_count(cp, delta) atomic_sub(delta, cp)
+#define read_count(cp) atomic_read(cp)
+#else
+counter_t counter;
+#endif
 
 void *count_read_perf_test(void *arg)
 {
@@ -43,7 +53,7 @@ void *count_read_perf_test(void *arg)
     int cpu = (long)arg;
     long long n_reads_local = 0LL;
 
-    KLOG_I("new thread cpu %d", cpu);
+    KLOG_I("new reader thread cpu %d", cpu);
     run_on(cpu);
     //count_register_thread();
     atomic_inc(&nthreadsrunning);
@@ -72,7 +82,9 @@ void *count_update_perf_test(void *arg)
 {
     int i;
     long long n_updates_local = 0LL;
-
+    int cpu = (long)arg;
+    KLOG_I("new updater thread cpu %d", cpu);
+    run_on(cpu);
     //count_register_thread();
     atomic_inc(&nthreadsrunning);
     while (READ_ONCE(goflag) == GOFLAG_INIT)
@@ -142,6 +154,21 @@ void perftest(int nreaders, int cpustride)
     perftestrun(i + 1, nreaders, 1);
 }
 
+void uperftest(int nupdaters, int cpustride)
+{
+    int i;
+	long arg;
+
+	atomic_set(&nthreadsrunning, 0);
+	nthreadsexpected = nupdaters;
+    tids = calloc(nthreadsexpected, sizeof(thread_id_t));
+	for (i = 0; i < nupdaters; i++) {
+		arg = (long)(i * cpustride);
+		tids[i] = create_thread(count_update_perf_test, (void *)arg);
+	}
+	perftestrun(i, 0, nupdaters);
+}
+
 /*
  * Mainprogram.
  */
@@ -165,7 +192,9 @@ int main(int argc, char *argv[])
     int cpustride = 1;
 
     new_counter(&counter, 0x1000000);
-    KLOG_I("current enable cpu num %d", num_enable_cpus());
+    int curcpu;
+    getcpu(&curcpu, NULL);
+    KLOG_I("current enable cpu num %d, curr %d", num_enable_cpus(), curcpu);
     if (argc > 1) {
         nreaders = strtoul(argv[1], NULL, 0);
         if (argc == 2)
@@ -178,7 +207,9 @@ int main(int argc, char *argv[])
             //rperftest(nreaders, cpustride);
         }
         else if (strcmp(argv[2], "uperf") == 0){
-            //uperftest(nreaders, cpustride);
+            int nupdaters = nreaders;
+            nreaders = 1;
+            uperftest(nupdaters, cpustride);
         }
         else if (strcmp(argv[2], "hog") == 0){
             //hogtest(nreaders, cpustride);
