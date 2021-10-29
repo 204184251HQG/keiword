@@ -10,6 +10,9 @@
 #include <string.h>
 
 atomic_t nthreadsrunning;
+atomic_t n_threads_run_up;
+atomic_t n_threads_run_down;
+atomic_t n_threads_hog;
 int nthreadsexpected;
 
 
@@ -100,7 +103,7 @@ void *count_update_perf_test(void *arg)
     __get_thread_var(n_updates_pt) += n_updates_local;
     //count_unregister_thread(nthreadsexpected);
     spin_lock16(&result_lock);
-    n_updates += n_updates_pt * 2;/* Each update includes an add and a subtract. */
+    n_updates += n_updates_local * 2;/* Each update includes an add and a subtract. */
     spin_unlock16(&result_lock);
     return NULL;
 }
@@ -169,6 +172,132 @@ void uperftest(int nupdaters, int cpustride)
 	perftestrun(i, 0, nupdaters);
 }
 
+void *count_updown_limit(void *arg)
+{
+	int me = (long)arg;
+	long long n_updates_local = 0LL;
+    KLOG_I("new count_updown_limit thread cpu %d", me);
+
+	run_on(me);
+	//count_register_thread();
+	atomic_inc(&nthreadsrunning);
+	while (READ_ONCE(goflag) != GOFLAG_RUN_UP)
+		usleep(1000);
+	while (add_count(&counter, 1)) {
+		n_updates_local++;
+	}
+	//__get_thread_var(n_updates_pt) += n_updates_local;
+    spin_lock16(&result_lock);
+    n_updates += n_updates_local;
+    spin_unlock16(&result_lock);
+	smp_mb();
+	atomic_inc(&n_threads_run_up);
+	while (READ_ONCE(goflag) != GOFLAG_RUN_DOWN)//n_updates cleaned in main thread
+		usleep(1000);
+	//n_updates_local = 0LL;
+	while (sub_count(&counter, 1)) {
+		n_updates_local--;
+	}
+	//__get_thread_var(n_updates_pt) += n_updates_local;
+    spin_lock16(&result_lock);
+    n_updates += n_updates_local;
+    spin_unlock16(&result_lock);
+	smp_mb();
+	atomic_inc(&n_threads_run_down);
+	while (READ_ONCE(goflag) != GOFLAG_STOP)
+		usleep(1000);
+	//count_unregister_thread(nthreadsexpected);
+	return NULL;
+}
+void *count_updown_hog(void *arg)
+{
+	int me = (long)arg;
+	unsigned long delta;
+    KLOG_I("new count_updown_hog thread cpu %d", me);
+
+	run_on(me);
+	//count_register_thread();
+	atomic_inc(&nthreadsrunning);
+	while (READ_ONCE(goflag) == GOFLAG_INIT)
+		usleep(1000);
+	delta = (num_online_threads() - 1) * 20;
+	if (!add_count(&counter, delta)) {
+		fprintf(stderr, "count_updown_hog(): add_count() failed!\n");
+		exit(EXIT_FAILURE);
+	}
+	n_updates += delta;
+	smp_mb();
+	atomic_inc(&n_threads_hog);
+	while (READ_ONCE(goflag) != GOFLAG_STOP)
+		usleep(1000);
+	//count_unregister_thread(nthreadsexpected);
+	return NULL;
+}
+void hogtest(int nreaders, int cpustride){
+    long arg;
+	int i;
+	int nthreads = 0;
+
+    atomic_set(&nthreadsrunning, 0);
+	atomic_set(&n_threads_run_up, 0);
+	atomic_set(&n_threads_run_down, 0);
+	atomic_set(&n_threads_hog, 0);
+
+    nthreadsexpected = nreaders + 1;
+    tids = calloc(nthreadsexpected, sizeof(thread_id_t));
+    for (i = 0; i < nreaders; i++) {
+		arg = (long)(i * cpustride);
+		tids[nthreads] = create_thread(count_updown_limit, (void *)arg);
+		nthreads++;
+	}
+    arg = (long)(i * cpustride);
+	tids[nthreads] = create_thread(count_updown_hog, (void *)arg);
+	nthreads++;
+    if(nthreadsexpected != nthreads){
+        KLOG_E("thread num error ");
+        return ;
+    }
+	smp_mb();
+    while (atomic_read(&nthreadsrunning) < nthreads)
+		usleep(1000);
+	goflag = GOFLAG_HOG;
+	smp_mb();
+	while (atomic_read(&n_threads_hog) < 1)
+		usleep(1000);
+    KLOG_I("hog %lld", n_updates);
+	smp_mb();
+	goflag = GOFLAG_RUN_UP;
+	smp_mb();
+	while (atomic_read(&n_threads_run_up) < nthreads - 1)
+		usleep(1000);
+	smp_mb();
+
+	if (n_updates != counter.globalcountmax){
+		KLOG_E("FAIL: only reached %lld : %u, of %u",
+			n_updates, read_count(&counter), counter.globalcountmax);
+        exit(EXIT_FAILURE);
+    }
+    KLOG_I("hog test reach max %lld", n_updates);
+	n_updates = 0LL;
+	goflag = GOFLAG_RUN_DOWN;
+	smp_mb();
+	while (atomic_read(&n_threads_run_down) < nthreads - 1)
+		usleep(1000);
+	smp_mb();
+
+	if (n_updates != 0){
+		KLOG_E("FAIL: only reached %lld rather than 0",
+			n_updates);
+        exit(EXIT_FAILURE);
+    }
+    KLOG_I("hog test reach zero");
+	smp_mb();
+	goflag = GOFLAG_STOP;
+	smp_mb();
+	wait_threads(tids, nthreads);
+    KLOG_I("hog test pass");
+	exit(EXIT_SUCCESS);
+}
 /*
  * Mainprogram.
  */
@@ -191,7 +320,7 @@ int main(int argc, char *argv[])
     int nreaders = 6;
     int cpustride = 1;
 
-    new_counter(&counter, 0x1000000);
+    new_counter(&counter, 0x10000000);
     int curcpu;
     getcpu(&curcpu, NULL);
     KLOG_I("current enable cpu num %d, curr %d", num_enable_cpus(), curcpu);
@@ -212,7 +341,7 @@ int main(int argc, char *argv[])
             uperftest(nupdaters, cpustride);
         }
         else if (strcmp(argv[2], "hog") == 0){
-            //hogtest(nreaders, cpustride);
+            hogtest(nreaders, cpustride);
         }
         usage(argc, argv);
         

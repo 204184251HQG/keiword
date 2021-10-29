@@ -246,6 +246,7 @@ counter_uint read_count(counter_t *counter){
             sum += (counter->counter_threadp[t]->counter);
     }
     spin_unlock16(tlockp);
+    return sum;
 }
 
 static void counter_destr(void *arr)
