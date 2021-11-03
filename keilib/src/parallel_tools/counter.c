@@ -179,11 +179,13 @@ static inline void blance_count(counter_t *counter, counter_thread_data_t *t){
         t->countermax = MAX_COUNTERMAX;
     }
     counter->globalreserve += t->countermax;
+
     t->counter = t->countermax / 2;
     if(t->counter > counter->globalcount){
         t->counter = counter->globalcount;
     }
     counter->globalcount -= t->counter;
+    //KLOG_I("counter->globalcount  %u counter->globalreserve %u, t->countermax %u t->counter %u", counter->globalcount ,counter->globalreserve, t->countermax, t->counter);
 }
 
 int add_count(counter_t *counter, counter_uint delta)
@@ -202,6 +204,7 @@ int add_count(counter_t *counter, counter_uint delta)
     globalize_count(counter, t);
     if(counter->globalcountmax - counter->globalcount - counter->globalreserve < delta){
         spin_unlock16(tlockp);
+        //KLOG_I("%u %u", t->counter, t->countermax);
         return 0;
     }
     counter->globalcount +=  delta;
@@ -242,8 +245,9 @@ counter_uint read_count(counter_t *counter){
     spin_lock16(tlockp);
     sum = counter->globalcount;
     for(int t = 0; t < COUNTER_MAX_THREADS; t++){
-        if(counter->counter_threadp[t])
+        if(counter->counter_threadp[t]){
             sum += (counter->counter_threadp[t]->counter);
+        }
     }
     spin_unlock16(tlockp);
     return sum;
@@ -273,6 +277,7 @@ static void counter_destr(void *arr)
         }
     }
     free(ctable);
+    unregister_to_thread_map();
 }
 
 static void counter_init(void)
@@ -325,6 +330,9 @@ retry:
             {
                 counter->index = i;
                 slot_table[i].counter_g = counter;
+            }else{
+                spin_unlock16(tlockp);
+                continue;
             }
             spin_unlock16(tlockp);
 

@@ -6,6 +6,8 @@
 
 #include "log/keilog.h"
 
+int ioctl(int fd, unsigned long request, ...);
+
 #define MAX_WIN_W 200
 int32_t get_win_width()
 {

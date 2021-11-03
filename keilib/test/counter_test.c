@@ -192,6 +192,7 @@ void *count_updown_limit(void *arg)
     spin_unlock16(&result_lock);
 	smp_mb();
 	atomic_inc(&n_threads_run_up);
+    KLOG_I("cpu %d uped", me);
 	while (READ_ONCE(goflag) != GOFLAG_RUN_DOWN)//n_updates cleaned in main thread
 		usleep(1000);
 	//n_updates_local = 0LL;
@@ -275,6 +276,7 @@ void hogtest(int nreaders, int cpustride){
 	if (n_updates != counter.globalcountmax){
 		KLOG_E("FAIL: only reached %lld : %u, of %u",
 			n_updates, read_count(&counter), counter.globalcountmax);
+        KLOG_I("debug counter globalreserve %u", counter.globalreserve);
         exit(EXIT_FAILURE);
     }
     KLOG_I("hog test reach max %lld", n_updates);
@@ -320,7 +322,7 @@ int main(int argc, char *argv[])
     int nreaders = 6;
     int cpustride = 1;
 
-    new_counter(&counter, 0x10000000);
+    new_counter(&counter, 0x100);
     int curcpu;
     getcpu(&curcpu, NULL);
     KLOG_I("current enable cpu num %d, curr %d", num_enable_cpus(), curcpu);
