@@ -24,6 +24,21 @@ typedef pthread_t thread_id_t;
 #ifdef __cplusplus
 extern "C"{
 #endif
+/*
+ * Exclusive locking primitives.
+ */
+
+typedef pthread_mutex_t spinlock_t;
+
+#define DEFINE_SPINLOCK(lock) spinlock_t lock = PTHREAD_MUTEX_INITIALIZER;
+#define __SPIN_LOCK_UNLOCKED(lockp) PTHREAD_MUTEX_INITIALIZER
+
+void spin_lock_init(spinlock_t *sp);
+void spin_lock(spinlock_t *sp);
+int spin_trylock(spinlock_t *sp);
+void spin_unlock(spinlock_t *sp);
+int spin_is_locked(spinlock_t *sp);
+
 int num_enable_cpus(void);
 int num_online_threads(void);
 thread_id_t create_thread(void *(*func)(void *), void *arg);
@@ -64,6 +79,12 @@ static __inline__ void run_on(int cpu)
 
 
 #define __get_thread_var(name) (name)
+
+
+
+
+
+
 
 
 #endif // _KEITHREAD_H_
