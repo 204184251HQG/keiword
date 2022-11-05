@@ -85,10 +85,12 @@ int num_online_threads(void){
             int tnum = atoi(tnum_str);
             if(tnum){
                 //KLOG_I("tnum %d\n", tnum);
+                fclose(status_f);
                 return tnum;
             }
         }
     }
+    fclose(status_f);
     return 1;
 }
 
